@@ -1,0 +1,10 @@
+*.iso
+tmp/*
+hooks/*
+var/*
+qemu/*
+vbox/*
+profiles/*
+!profiles/default.ini
+!profiles/test.ini
+!profiles/offline.ini

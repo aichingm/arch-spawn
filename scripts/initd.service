@@ -1,0 +1,11 @@
+[Unit]
+Description=Run all scripts in /etc/init.d (part of arch-spawn)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash -c "bash /etc/init.d/*"
+RemainAfterExit=false
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target
