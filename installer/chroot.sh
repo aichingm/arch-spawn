@@ -1,7 +1,5 @@
 #!/bin/bash
 
-$(bash /root/pro.sh profile )
-
 ln -sf /usr/share/zoneinfo/$(bash /root/pro.sh profile Zone)/$(bash /root/pro.sh profile SubZone) /etc/localtime
 
 hwclock --systohc

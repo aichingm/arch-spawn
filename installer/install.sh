@@ -30,6 +30,7 @@ pacstrap /mnt $(cat /root/pkgs)
 
 genfstab -U /mnt >> /mnt/etc/fstab
 
+cp /root/after_install.sh /mnt/root/after_install.sh
 cp /root/chroot.sh /mnt/root/chroot.sh
 cp /root/pro.sh /mnt/root/pro.sh
 mkdir /mnt/root/profiles
