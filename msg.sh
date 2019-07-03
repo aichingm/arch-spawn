@@ -17,6 +17,6 @@ case "$1" in
             echo -n "$2" | lolcat -F .4
             ;;
         *)
-        
+
 esac
 if [[ "1" -eq $3 ]]; then echo ""; fi

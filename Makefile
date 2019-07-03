@@ -20,15 +20,16 @@ _pkg-list:
 	rm tmp/*.deps;
 
 _pkg-cache:
-	bash msg.sh info $$'Downloading pacman db\n'
+	@bash msg.sh info $$'Downloading pacman db\n'
 	mkdir -p tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/var/cache/pacman/pkg
 	mkdir -p tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/var/lib/pacman/
 	sudo pacman -Syb tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/var/lib/pacman/
-	bash msg.sh info $$'Downloading packages\n'
+	@bash msg.sh info $$'Downloading packages\n'
 	sudo pacman -Sw $$(cat tmp/$(profile)-pkgs) --cachedir tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/var/cache/pacman/pkg --noconfirm
 
 _patch-pacstrap:
-	sed '355s/.*/if ! pacman -r \"$$newroot\" -S \"$${pacman_args[@]}\"; then/' tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/usr/bin/pacstrap > tmp/pacstrap
+	# source at https://git.archlinux.org/arch-install-scripts.git/tree/pacstrap.in
+	sed '367s:.*:if ! pacman --gpgdir /mnt/etc/pacman.d/gnupg -r \"$$newroot\" -S \"$${pacman_args[@]}\"; then:' tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/usr/bin/pacstrap > tmp/pacstrap
 	sudo cp tmp/pacstrap tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/usr/bin/pacstrap
 hooks:
 	mkdir hooks
@@ -52,7 +53,7 @@ patch: grab _clean
 	mkdir tmp/arch-spawn-iso-squashfs-$(profile)
 	@bash msg.sh info $$'Mounting unpatched iso\n'
 	sudo mount -o loop $$(bash var.sh iso_name)-$$(bash var.sh iso_version).iso tmp/arch-spawn-iso-$(profile)
-	cp -rf tmp/arch-spawn-iso-$(profile)/* tmp/arch-spawn-iso-patching-$(profile)
+	cp -r tmp/arch-spawn-iso-$(profile)/* tmp/arch-spawn-iso-patching-$(profile)
 	sudo umount tmp/arch-spawn-iso-$(profile)
 	@bash msg.sh info $$'Enabling syslinux autoboot\n'
 	@echo DEFAULT arch64 > tmp/arch-spawn-iso-patching-$(profile)/isolinux/isolinux.cfg
@@ -89,14 +90,14 @@ patch: grab _clean
 		bash msg.sh warn "Failed to copy "$$(bash pro.sh $(profile) After_Install)": File not found!"; \
 		bash msg.sh warn '\n'; \
 	fi
-	
+
 	if [[ "1" -eq $$(bash pro.sh $(profile) Auto_Install) ]]; then \
 		sudo bash -c "echo 'bash /root/install.sh' >>  tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/root/.zshrc;" \
 		sudo chmod +x tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/root/.bashrc; \
 	fi
-	
+
 	make _pkg-list
-	
+
 	if [[ "1" -eq $$(bash pro.sh $(profile) Installer) ]]; then \
 		sudo cp pro.sh tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/root/pro.sh; \
 		sudo mkdir tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/root/profiles; \
@@ -107,36 +108,36 @@ patch: grab _clean
 		sudo cp tmp/$(profile)-pkgs tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/root/pkgs; \
 	fi
 
-	
-	
-	
 	if [[ "1" -eq $$(bash pro.sh $(profile) Offline) ]]; then \
 		make _pkg-cache; \
 		make _patch-pacstrap; \
+		sudo pacman-key --init         --gpgdir /tmp/arch-spawn-iso-squashfs-$(profile)/gnupg; \
+		sudo pacman-key --populate     --gpgdir /tmp/arch-spawn-iso-squashfs-$(profile)/gnupg; \
+		sudo pacman-key --refresh-keys --gpgdir /tmp/arch-spawn-iso-squashfs-$(profile)/gnupg; \
+		sudo rm -rf tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/etc/pacman.d/gnupg; \
+		sudo mv /tmp/arch-spawn-iso-squashfs-$(profile)/gnupg tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/root/; \
 	fi
 
-	
 	#sudo cp $$(ls -rt /var/cache/pacman/pkg/s-nail* | tail -n1) tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/var/cache/pacman/pkg
-	
-	
+
 	if [[ "1" -eq $$(bash pro.sh $(profile) Halt_For_Patching) ]]; then bash msg.sh warn "Halted for manual patching (hit enter when done)";bash -c 'read'; fi
-	
+
 	if [ -f hooks/patched.sh ]; then bash hooks/patched.sh; fi
 	@bash msg.sh info $$'Squashing rootfs\n'
 	cd tmp/arch-spawn-iso-squashfs-$(profile) && sudo mksquashfs squashfs-root airootfs.sfs 
 	mv tmp/arch-spawn-iso-squashfs-$(profile)/airootfs.sfs tmp/arch-spawn-iso-patching-$(profile)/arch/x86_64/airootfs.sfs
 	sha512sum tmp/arch-spawn-iso-patching-$(profile)/arch/x86_64/airootfs.sfs > tmp/arch-spawn-iso-patching-$(profile)/arch/x86_64/airootfs.sha512
-	
+
 	@bash msg.sh info $$'Making iso\n'
 	mkisofs -R -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -V $$(bash var.sh iso_label) -o tmp/arch-spawn-iso-patched-$(profile)/$$(bash var.sh iso_name)-$$(bash var.sh iso_version)-patched-$(profile).iso tmp/arch-spawn-iso-patching-$(profile)
-	mv tmp/arch-spawn-iso-patched-$(profile)/$$(bash var.sh iso_name)-$$(bash var.sh iso_version)-patched-$(profile).iso ./$$(bash var.sh iso_name)-$$(bash var.sh iso_version)-patched-$(profile).iso 
+	mv tmp/arch-spawn-iso-patched-$(profile)/$$(bash var.sh iso_name)-$$(bash var.sh iso_version)-patched-$(profile).iso ./$$(bash var.sh iso_name)-$$(bash var.sh iso_version)-patched-$(profile).iso
 
 	@bash msg.sh info $$'Cleaning up\n'
 	make _clean
-	
-	
+
+
 	@bash msg.sh success $$'Done!\n'
-		
+
 _clean:
 	sudo umount tmp/arch-spawn-iso-$(profile) || true
 	rm -rf tmp/arch-spawn-iso-$(profile)	
@@ -144,22 +145,27 @@ _clean:
 	rm -rf tmp/arch-spawn-iso-patched-$(profile)
 	sudo rm -rf tmp/arch-spawn-iso-squashfs-$(profile)
 	rm -rf tmp
-	
+
 iso: patch
-	
-test-qemu: 
+
+test-qemu:
 	mkdir qemu || true
 	qemu-img create -f raw qemu/hda-$(profile).raw 4G
-	qemu-system-x86_64 -enable-kvm -net nic -net user -m 1024 -boot cd -cdrom $$(bash var.sh iso_name)-$$(bash var.sh iso_version)-patched-$(profile).iso -drive file=qemu/hda-$(profile).raw,format=raw,index=0,media=disk 
+	qemu-system-x86_64 -enable-kvm -net nic -net user -m 1024 -boot cd -cdrom $$(bash var.sh iso_name)-$$(bash var.sh iso_version)-patched-$(profile).iso -drive file=qemu/hda-$(profile).raw,format=raw,index=0,media=disk
 
-test-qemu-clean: 	
-	rm qemu/hda-$(profile).raw 
+test-qemu-offline:
+	mkdir qemu || true
+	qemu-img create -f raw qemu/hda-$(profile).raw 4G
+	qemu-system-x86_64 -enable-kvm -m 1024 -boot cd -cdrom $$(bash var.sh iso_name)-$$(bash var.sh iso_version)-patched-$(profile).iso -drive file=qemu/hda-$(profile).raw,format=raw,index=0,media=disk
+
+test-qemu-clean:
+	rm qemu/hda-$(profile).raw
 
 test-vbox: 
 	mkdir vbox || true
 	VBoxManage createvm --name $$(bash pro.sh $(profile) Name) --ostype "ArchLinux_64" --register
 	VBoxManage  createhd --size 4000 --format VDI --filename vbox/$(profile).vdi
-	VBoxManage storagectl $$(bash pro.sh $(profile) Name) --name "IDE Controller" --add ide 
+	VBoxManage storagectl $$(bash pro.sh $(profile) Name) --name "IDE Controller" --add ide
 	VBoxManage storageattach $$(bash pro.sh $(profile) Name) --storagectl "IDE Controller" --port 0 --device 0 --type dvddrive --medium $$(bash var.sh iso_name)-$$(bash var.sh iso_version)-patched-$(profile).iso
 	VBoxManage storageattach $$(bash pro.sh $(profile) Name) --storagectl "IDE Controller" --port 1 --device 0 --type hdd --medium vbox/$(profile).vdi
 	VBoxManage modifyvm $$(bash pro.sh $(profile) Name) --ioapic on
@@ -180,7 +186,6 @@ test-vbox-clean:
 	VBoxManage unregistervm $$(bash pro.sh $(profile) Name) --delete || true
 	vboxmanage closemedium  disk vbox/$(profile).vdi --delete || true
 
-
 check-deps:
 	which make
 	which pacman
@@ -190,4 +195,3 @@ check-deps:
 	which mkisofs
 	which sha512sum
 	which sudo
-	
