@@ -22,8 +22,10 @@ mount /dev/sda1 /mnt
 if [[ "1" -eq $(bash pro.sh profile Offline) ]]; then 
     mkdir -p /mnt/var/lib/pacman/sync
     mkdir -p /mnt/var/cache/pacman/pkg
-    cp /var/lib/pacman/sync/* /mnt/var/lib/pacman/sync/
-    cp /var/cache/pacman/pkg/* /mnt/var/cache/pacman/pkg/
+    mkdir -p /mnt/etc/pacman.d/gnupg
+    cp -r /var/lib/pacman/sync/* /mnt/var/lib/pacman/sync/
+    cp -r /var/cache/pacman/pkg/* /mnt/var/cache/pacman/pkg/
+    cp -r /root/gnupg/* /mnt/etc/pacman.d/gnupg
 fi
 
 pacstrap /mnt $(cat /root/pkgs)
@@ -33,12 +35,15 @@ genfstab -U /mnt >> /mnt/etc/fstab
 cp /root/after_install.sh /mnt/root/after_install.sh
 cp /root/chroot.sh /mnt/root/chroot.sh
 cp /root/pro.sh /mnt/root/pro.sh
-mkdir /mnt/root/profiles
+mkdir -p /mnt/root/profiles
 cp /root/pro.sh /mnt/root/pro.sh
-cp /root/profiles/* /mnt/root/profiles/
+cp -r /root/profiles/* /mnt/root/profiles/
 
 arch-chroot /mnt <<EOC
 bash /root/chroot.sh
 EOC
+rm /mnt/root/pro.sh
+rm -rf /mnt/root/profiles/
+rm /mnt/root/chroot.sh
 
 reboot
