@@ -77,6 +77,20 @@ All profiles are extending the `default.ini` profile omitted values will be take
   Auto_Install=0
   ```
 
+- offline-auto
+
+  ```ini
+  Name=arch-spawn-offline
+  Halt_For_Patching=0
+  On_Startup=none
+  On_Login=none
+  After_Install=none
+  Offline=1
+  Packages=vim
+  Installer=1
+  Auto_Install=1
+  ```
+
 ### Values
 
 * Name \<string> name of the profile (should be the same as the file name)
@@ -91,7 +105,7 @@ All profiles are extending the `default.ini` profile omitted values will be take
 * SubZone \<string> A geographical sub zone. Check `/usr/share/*/`.
 * Password \<string> The root password for the installation
 * Locale \<string> The locale for the installation like `en_US.UTF-8`. Check `/etc/locale.gen` *Only utf-8 locale*
-* Auto_Install \<0 or 1> Set to 1 to start the installer after the boot of the iso. 
+* Auto_Install \<0 or 1> Set to 1 to start the installer after the boot of the iso.
 
 ### Custom profiles
 
@@ -115,7 +129,7 @@ You can override values in `const/` by creating the directory `var` and a file w
 
 ## How does it work
 
-Arch-Spawn basically does this simple steps: 
+Arch-Spawn basically does this simple steps:
 
 1. Downloading the official archlinux installation iso.
 2. Mounting the iso
@@ -125,4 +139,20 @@ Arch-Spawn basically does this simple steps:
 6. Packing the file system
 7. Creating a new iso
 
- 
+## Updating to a new ISO-Version
+
+1. Change the version in const/iso_version to e.g. `2019.10.01`
+2. Change the sha1 hash in const/iso_hash to e.g. `23da63fe1f83f6f066ce0cc5450a1c5171e242d9`
+3. Test the new version
+   1. `make iso profile=offline-auto`
+   2. `make test-qumu profile=offline-auto`
+   3. Login with user `root` and password `default`
+
+
+
+
+
+
+
+
+
