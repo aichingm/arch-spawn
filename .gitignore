@@ -1,4 +1,5 @@
 *.iso
+*.iso.sha1
 tmp/*
 hooks/*
 var/*

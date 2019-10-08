@@ -1,7 +1,8 @@
 profile=default
 
 base-pkg-list:
-	pacman -Qg base |  awk -F ' ' '{print $$2}' > const/base_pkgs
+	pactree -u -l -s base > const/base_pkgs
+	pactree -u -l -s linux >> const/base_pkgs
 
 _pkg-list:
 	mkdir -p tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/var/cache/pacman/pkg;
@@ -38,11 +39,16 @@ hooks:
 	echo "#!/bin/bash" > hooks/patching.sh
 	echo "#!/bin/bash" > hooks/patched.sh
 
-grab:
+
+sha1sum:
+	echo $$(bash var.sh iso_hash) $$(bash var.sh iso_name)-$$(bash var.sh iso_version).iso > $$(bash var.sh iso_name)-$$(bash var.sh iso_version).iso.sha1
+
+grab: sha1sum
 	@bash msg.sh info $$'Grabbing iso from the interwebs\n'
 	if [ -f hooks/grabbing.sh ]; then bash hooks/grabbing.sh; fi
 	if [ ! -f $$(bash var.sh iso_name)-$$(bash var.sh iso_version).iso ]; then curl -f -o $$(bash var.sh iso_name)-$$(bash var.sh iso_version).iso $$(bash var.sh iso_server)$$(bash var.sh iso_path)$$(bash var.sh iso_version)/archlinux-$$(bash var.sh iso_version)-x86_64.iso; fi
 	if [ -f hooks/grabed.sh ]; then bash hooks/grabed.sh; fi
+	sha1sum -c $$(bash var.sh iso_name)-$$(bash var.sh iso_version).iso.sha1
 
 
 patch: grab _clean
@@ -124,7 +130,7 @@ patch: grab _clean
 
 	if [ -f hooks/patched.sh ]; then bash hooks/patched.sh; fi
 	@bash msg.sh info $$'Squashing rootfs\n'
-	cd tmp/arch-spawn-iso-squashfs-$(profile) && sudo mksquashfs squashfs-root airootfs.sfs 
+	cd tmp/arch-spawn-iso-squashfs-$(profile) && sudo mksquashfs squashfs-root airootfs.sfs
 	mv tmp/arch-spawn-iso-squashfs-$(profile)/airootfs.sfs tmp/arch-spawn-iso-patching-$(profile)/arch/x86_64/airootfs.sfs
 	sha512sum tmp/arch-spawn-iso-patching-$(profile)/arch/x86_64/airootfs.sfs > tmp/arch-spawn-iso-patching-$(profile)/arch/x86_64/airootfs.sha512
 
@@ -140,7 +146,7 @@ patch: grab _clean
 
 _clean:
 	sudo umount tmp/arch-spawn-iso-$(profile) || true
-	rm -rf tmp/arch-spawn-iso-$(profile)	
+	rm -rf tmp/arch-spawn-iso-$(profile)
 	rm -rf tmp/arch-spawn-iso-patching-$(profile)
 	rm -rf tmp/arch-spawn-iso-patched-$(profile)
 	sudo rm -rf tmp/arch-spawn-iso-squashfs-$(profile)
@@ -161,7 +167,7 @@ test-qemu-offline:
 test-qemu-clean:
 	rm qemu/hda-$(profile).raw
 
-test-vbox: 
+test-vbox:
 	mkdir vbox || true
 	VBoxManage createvm --name $$(bash pro.sh $(profile) Name) --ostype "ArchLinux_64" --register
 	VBoxManage  createhd --size 4000 --format VDI --filename vbox/$(profile).vdi
@@ -175,8 +181,8 @@ test-vbox:
 	#@bash msg.sh info $$'Nic is set to '$$(route | grep '^default' | grep -o '[^ ]*$$')'\n'
 	VBoxManage modifyvm $$(bash pro.sh $(profile) Name) --nic2 nat
 	#VBoxManage modifyvm $$(bash pro.sh test Name) --natpf1 "guestssh,tcp,,$$(bash pro.sh $(profile) SshPort),,22"
-	VBoxManage modifyvm $$(bash pro.sh $(profile) Name) --boot1 disk 
-	VBoxManage modifyvm $$(bash pro.sh $(profile) Name) --boot2 dvd 
+	VBoxManage modifyvm $$(bash pro.sh $(profile) Name) --boot1 disk
+	VBoxManage modifyvm $$(bash pro.sh $(profile) Name) --boot2 dvd
 	VBoxManage startvm $$(bash pro.sh $(profile) Name)
 	@bash msg.sh warn $$'Waiting for machine '$$(bash pro.sh $(profile) Name)' to poweroff...\n'
 	until $$(VBoxManage showvminfo --machinereadable $$(bash pro.sh $(profile) Name) | grep -q ^VMState=.poweroff.); do sleep 1; done;
