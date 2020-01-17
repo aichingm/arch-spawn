@@ -3,7 +3,7 @@ Description=Run all scripts in /etc/init.d (part of arch-spawn)
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/bash -c "bash /etc/init.d/*"
+ExecStart=/usr/bin/bash -c "bash /etc/init.d/* || true"
 RemainAfterExit=false
 StandardOutput=journal
 

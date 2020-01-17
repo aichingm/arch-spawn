@@ -123,7 +123,7 @@ The installer will install archlinux on `/dev/sda` with the vary basic options. 
 
 You can override values in `const/` by creating the directory `var` and a file with the name of the file in `const/` which you want to override. Files in `var` will always overrule the corresponding file in `const`.
 
-##Troubleshooting
+## Troubleshooting
 
 `make grab` returns with error 22 this most likely means that the iso could not be downloaded. Check the value in `var/iso_version` or `const/iso_version`.
 

@@ -2,7 +2,10 @@
 
 # check for clean drive
 
-if [[ ! 0 -eq $(grep -c 'sda[0-9]' /proc/partitions) ]]; then echo "/dev/sda has a partition table, aborting!";exit;fi
+if [[ ! 0 -eq $(grep -c 'sda[0-9]' /proc/partitions) ]]; then 
+  echo "/dev/sda has a partition table, aborting!";
+  exit;
+fi
 
 fdisk /dev/sda <<EOF
 o
@@ -28,7 +31,9 @@ if [[ "1" -eq $(bash pro.sh profile Offline) ]]; then
     cp -r /root/gnupg/* /mnt/etc/pacman.d/gnupg
 fi
 
-pacstrap /mnt $(cat /root/pkgs)
+pacman-key --init
+
+pacstrap -G /mnt $(cat /root/pkgs)
 
 genfstab -U /mnt >> /mnt/etc/fstab
 

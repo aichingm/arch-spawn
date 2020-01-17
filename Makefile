@@ -30,7 +30,7 @@ _pkg-cache:
 
 _patch-pacstrap:
 	# source at https://git.archlinux.org/arch-install-scripts.git/tree/pacstrap.in
-	sed '367s:.*:if ! pacman --gpgdir /mnt/etc/pacman.d/gnupg -r \"$$newroot\" -S \"$${pacman_args[@]}\"; then:' tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/usr/bin/pacstrap > tmp/pacstrap
+	sed -e 's:$$pacmode:  --gpgdir /mnt/etc/pacman.d/gnupg -S :'  tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/usr/bin/pacstrap > tmp/pacstrap
 	sudo cp tmp/pacstrap tmp/arch-spawn-iso-squashfs-$(profile)/squashfs-root/usr/bin/pacstrap
 hooks:
 	mkdir hooks
@@ -162,7 +162,7 @@ test-qemu:
 test-qemu-offline:
 	mkdir qemu || true
 	qemu-img create -f raw qemu/hda-$(profile).raw 4G
-	qemu-system-x86_64 -enable-kvm -m 1024 -boot cd -cdrom $$(bash var.sh iso_name)-$$(bash var.sh iso_version)-patched-$(profile).iso -drive file=qemu/hda-$(profile).raw,format=raw,index=0,media=disk
+	qemu-system-x86_64 -enable-kvm -nic none -m 1024 -boot cd -cdrom $$(bash var.sh iso_name)-$$(bash var.sh iso_version)-patched-$(profile).iso -drive file=qemu/hda-$(profile).raw,format=raw,index=0,media=disk
 
 test-qemu-clean:
 	rm qemu/hda-$(profile).raw
