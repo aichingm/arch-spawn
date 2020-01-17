@@ -1,5 +1,11 @@
 profile=default
 
+.PHONY: base-pkg-list _pkg-list _pkg-cache _patch-pacstrap hooks sha1sum grab \
+patch _clean iso test-qemu test-qemu-offline test-qemu-clean test-vbox \
+test-vbox-clean check-deps
+
+iso: patch
+
 base-pkg-list:
 	pactree -u -l -s base > const/base_pkgs
 	pactree -u -l -s linux >> const/base_pkgs
@@ -152,7 +158,7 @@ _clean:
 	sudo rm -rf tmp/arch-spawn-iso-squashfs-$(profile)
 	rm -rf tmp
 
-iso: patch
+clean: _clean test-qemu-clean test-vbox-clean
 
 test-qemu:
 	mkdir qemu || true
@@ -165,7 +171,7 @@ test-qemu-offline:
 	qemu-system-x86_64 -enable-kvm -nic none -m 1024 -boot cd -cdrom $$(bash var.sh iso_name)-$$(bash var.sh iso_version)-patched-$(profile).iso -drive file=qemu/hda-$(profile).raw,format=raw,index=0,media=disk
 
 test-qemu-clean:
-	rm qemu/hda-$(profile).raw
+	rm qemu/hda-$(profile).raw || true
 
 test-vbox:
 	mkdir vbox || true
